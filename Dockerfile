@@ -6,8 +6,8 @@ WORKDIR /app
 
 # Копируем файлы проекта
 COPY MultipleFiles/ ./MultipleFiles/
-COPY frontend/ ./frontend/
 COPY requirements.txt ./
+COPY instance/ ./instance/
 
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt

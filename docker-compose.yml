@@ -2,16 +2,48 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: ./Dockerfile.api
+    volumes:
+      - ./instance/tasks_data.db:/app/instance/tasks_data.db
     ports:
       - "5000:5000"
-    volumes:
-      - ./MultipleFiles/task_data.db:/app/MultipleFiles/task_data.db
     depends_on:
       - worker
+      - rabbitmq
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASS=password123
 
   worker:
-    build: .
-    command: python MultipleFiles/worker.py
+    build:
+      context: .
+      dockerfile: ./Dockerfile.worker
+    command: python mainFiles/worker.py
     volumes:
-      - ./MultipleFiles/task_data.db:/app/MultipleFiles/task_data.db
+      - ./instance/tasks_data.db:/app/instance/tasks_data.db
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASS=password123
+    depends_on:
+      - rabbitmq
+    deploy:
+      replicas: 3
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: password123
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
