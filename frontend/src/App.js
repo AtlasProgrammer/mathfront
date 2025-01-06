@@ -17,7 +17,7 @@ function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/login', { username, password });
+      const response = await axios.post('http://127.0.0.1:5000/api/login', { username, password });
       const { token } = response.data;
       localStorage.setItem('token', token);
       setToken(token);
@@ -38,12 +38,12 @@ function App() {
     setStatus('Отправка...');
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/tasks',
+        'http://127.0.0.1:5000/api/tasks',
         { expression, point_a: pointA, point_b: pointB, ttl },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setStatus(`Задача создана с ID: ${response.data.task_id}`);
-      fetchTasks();
+      fetchTasks();  // Обновляем список задач
     } catch (error) {
       setStatus('Ошибка при создании задачи');
     }
@@ -51,13 +51,17 @@ function App() {
 
   const fetchTasks = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/tasks', {
+      const response = await axios.get('http://127.0.0.1:5000/api/tasks', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTasks(response.data);
     } catch (error) {
       console.error('Ошибка при получении задач', error);
     }
+  };
+
+  const refreshTasks = () => {
+    fetchTasks();  // Обновляем список задач
   };
 
   useEffect(() => {
@@ -100,7 +104,7 @@ function App() {
               <button onClick={handleLogout} className="mb-4 p-2 bg-red-500 rounded">Выйти</button>
               <div className="flex justify-between">
                 <div className="w-1/2 bg-gray-600 rounded-lg p-4 mr-4">
-                  <h2 className="text-white text-center mb-4">Ввод данных</h2>
+                  <h2 className="text-white text-center mb-4"> Ввод данных</h2>
                   <form onSubmit={handleSubmit}>
                     <input
                       type="text"
@@ -140,6 +144,7 @@ function App() {
                 </div>
                 <div className="w-1/2 bg-gray-600 rounded-lg p-4">
                   <h2 className="text-white text-center mb-4">Очередь задач</h2>
+                  <button onClick={refreshTasks} className="mb-4 p-2 bg-blue-500 rounded">Обновить задачи</button>
                   <ul className="task-list flex flex-col" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                     {tasks.map((task) => (
                       <li key={task.id} className="task-item bg-gray-700 rounded-lg p-4 text-white mb-2">
@@ -188,11 +193,11 @@ function App() {
                 <stop offset="0%" style={{ stopColor: 'rgba(53, 127, 242, 0.6)' }}></stop>
                 <stop offset="100%" style={{ stopColor: 'rgba(38, 89, 190, 0.06)' }}></stop>
               </linearGradient>
-              <path id="wave" fill="url(#bg)" d="M-363.852,502.589c0,0,236.988-41.997,505.475,0 s371.981,38.998,575.971,0s293.985-39.278,505.474,5.859s493.475,48.368,716.963-4.995v560.106H-363.852V502.589z" />
+              <path id="wave" fill="url(#bg)" d="M-363.852,502.589 c0,0,236.988-41.997,505.475,0 s371.981,38.998,575.971,0s293.985-39.278,505.474,5.859s493.475,48.368,716.963-4.995v560.106H-363.852V502.589z" />
             </defs>
             <g>
               <use xlinkHref="#wave" opacity=".3">
-                <animateTransform attributeName="transform" attributeType="XML" type="translate" dur="8s" calc Mode="spline" values="270 230; -285 240; 270 230" keyTimes="0; .5; 1" keySplines="0.42, 0, 0.58, 1.0;0.42, 0, 0.58, 1.0" repeatCount="indefinite" />
+                <animateTransform attributeName="transform" attributeType="XML" type="translate" dur="8s" calcMode="spline" values="270 230; -285 240; 270 230" keyTimes="0; .5; 1" keySplines="0.42, 0, 0.58, 1.0;0.42, 0, 0.58, 1.0" repeatCount="indefinite" />
               </use>
               <use xlinkHref="#wave" opacity=".6">
                 <animateTransform attributeName="transform" attributeType="XML" type="translate" dur="6s" calcMode="spline" values="-270 230;243 280;-270 230" keyTimes="0; .6; 1" keySplines="0.42, 0, 0.58, 1.0;0.42, 0, 0.58, 1.0" repeatCount="indefinite" />
@@ -212,10 +217,10 @@ function App() {
           </ul>
           <ul className="links">
             <li><a href='/#'>Home</a></li>
-            <li><a href='/github'>Github</a></li>
+            <li><a href='https://github.com/WatchWitch/mathfront'>Github</a></li>
             <li><a href='/team'>Team</a></li>
           </ul>
-          <p className="legal">© 2024 All rights reserved</p>
+          <p className="legal">© 2025 All rights reserved</p>
         </section>
       </footer>
     </div>
