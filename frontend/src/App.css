@@ -27,14 +27,6 @@ ul {
   margin: 0;
 }
 
-.socials {
-  gap: 20px;
-}
-
-.socials a {
-  font-size: 24px;
-}
-
 .links {
   gap: 10px;
   flex-direction: column;
