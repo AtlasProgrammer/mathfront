@@ -43,7 +43,7 @@ function App() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setStatus(`Задача создана с ID: ${response.data.task_id}`);
-      fetchTasks();  // Обновляем список задач
+      fetchTasks();
     } catch (error) {
       setStatus('Ошибка при создании задачи');
     }
@@ -61,13 +61,19 @@ function App() {
   };
 
   const refreshTasks = () => {
-    fetchTasks();  // Обновляем список задач
+    fetchTasks();
   };
 
   useEffect(() => {
     if (token) {
       setIsAuthenticated(true);
       fetchTasks();
+
+      const intervalId = setInterval(() => {
+        fetchTasks();
+      }, 5000);
+
+      return () => clearInterval(intervalId);
     }
   }, [token]);
 
@@ -141,10 +147,10 @@ function App() {
                     <button className="w-full p-2 bg-white rounded">Решить</button>
                   </form>
                   <p className="text-red-500 text-center mt-2">{status}</p>
+                  <button onClick={refreshTasks} className="mt-4 w-full p-2 bg-blue-500 rounded">Обновить задачи</button>
                 </div>
                 <div className="w-1/2 bg-gray-600 rounded-lg p-4">
                   <h2 className="text-white text-center mb-4">Очередь задач</h2>
-                  <button onClick={refreshTasks} className="mb-4 p-2 bg-blue-500 rounded">Обновить задачи</button>
                   <ul className="task-list flex flex-col" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                     {tasks.map((task) => (
                       <li key={task.id} className="task-item bg-gray-700 rounded-lg p-4 text-white mb-2">
@@ -209,12 +215,6 @@ function App() {
           </svg>
         </div>
         <section>
-          <ul className="socials">
-            <li><a className="fa-brands fa-facebook"></a></li>
-            <li><a className="fa-brands fa-twitter"></a></li>
-            <li><a className="fa-brands fa-linkedin"></a></li>
-            <li><a className="fa-brands fa-instagram"></a></li>
-          </ul>
           <ul className="links">
             <li><a href='/#'>Home</a></li>
             <li><a href='https://github.com/WatchWitch/mathfront'>Github</a></li>
