@@ -5,23 +5,21 @@ from datetime import datetime, timedelta
 from flask_cors import CORS
 import jwt
 import json
-import pika  # Импортируем библиотеку для работы с RabbitMQ
+import pika
 
 app = Flask(__name__)
 
-# Определяем путь к файлу базы данных
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Получаем директорию текущего файла
-DATABASE_FILE = os.path.join(BASE_DIR, '..', 'instance', 'tasks_data.db')  # Создаем полный путь к файлу базы данных
 
-# Настройка конфигурации
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE_FILE}'  # Используем полный путь к файлу
-app.config['SECRET_KEY'] = 'your_secret_key'  # Секретный ключ для JWT
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE_FILE = os.path.join(BASE_DIR, '..', 'instance', 'tasks_data.db')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE_FILE}'
+app.config['SECRET_KEY'] = 'your_secret_key'
 db = SQLAlchemy(app)
 CORS(app)
 
 
-# Настройка RabbitMQ
-RABBITMQ_HOST = 'rabbitmq'  # Имя сервиса RabbitMQ в Kubernetes
+RABBITMQ_HOST = 'rabbitmq'
 RABBITMQ_QUEUE = 'task_queue'
 RABBITMQ_USER = 'admin'
 RABBITMQ_PASS = 'password123'
@@ -33,38 +31,34 @@ class Task(db.Model):
     point_a = db.Column(db.REAL, nullable=False)
     point_b = db.Column(db.REAL, nullable=False)
     ttl = db.Column(db.Integer, nullable=False)
-    status = db.Column(db.TEXT, default='В очереди')  # Статус задачи
+    status = db.Column(db.TEXT, default='В очереди')
     created_at = db.Column(db.DateTime, default=datetime.now)
-    completed_at = db.Column(db.DateTime, nullable=True)  # Дата и время завершения задачи
-    newton_result = db.Column(db.REAL, nullable=True)  # Результат метода Ньютона
-    segment_result = db.Column(db.REAL, nullable=True)  # Результат метода бисекции
+    completed_at = db.Column(db.DateTime, nullable=True)
+    newton_result = db.Column(db.REAL, nullable=True)
+    segment_result = db.Column(db.REAL, nullable=True)
 
 
-
-# Статичный аккаунт для авторизации
 USER_CREDENTIALS = {
     'username': 'admin',
-    'password': 'password123'  # Пароль для входа
+    'password': 'password123'
 }
 
-# Генерация JWT токена
 def generate_token():
     payload = {
         'username': USER_CREDENTIALS['username'],
-        'exp': datetime.utcnow() + timedelta(hours=1)  # Токен действителен 1 час
+        'exp': datetime.utcnow() + timedelta(hours=1)
     }
     token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
     return token
 
-# Проверка JWT токена
 def verify_token(token):
     try:
         decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         return decoded_token
     except jwt.ExpiredSignatureError:
-        return None  # Токен истек
+        return None
     except jwt.InvalidTokenError:
-        return None  # Неверный токен
+        return None
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -83,7 +77,7 @@ def create_task():
     if not token:
         return jsonify({'message': 'Отсутствует токен'}), 403
 
-    token = token.split(" ")[1]  # Извлекаем токен из заголовка "Bearer <token>"
+    token = token.split(" ")[1]
 
     try:
         decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
@@ -102,11 +96,8 @@ def create_task():
     db.session.add(task)
     db.session.commit()
 
-    # Запускаем выполнение задачи в фоновом режиме
-    # process_task(task.id)
 
-    # Отправляем задачу в RabbitMQ
-    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)  # Учетные данные для RabbitMQ
+    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials))
     channel = connection.channel()
     channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
@@ -123,7 +114,7 @@ def create_task():
         routing_key=RABBITMQ_QUEUE,
         body=json.dumps(task_data),
         properties=pika.BasicProperties(
-            delivery_mode=2,  # Делает сообщение долговечным
+            delivery_mode=2,
         )
     )
     connection.close()
@@ -142,7 +133,7 @@ def get_tasks():
     if not token:
         return jsonify({'message': 'Отсутствует токен'}), 403
 
-    token = token.split(" ")[1]  # Извлекаем токен из заголовка "Bearer <token>"
+    token = token.split(" ")[1]
 
     try:
         decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
@@ -163,8 +154,6 @@ def get_tasks():
     } for task in tasks])
 
 if __name__ == '__main__':
-    with app.app_context():  # Создаем контекст приложения
-        db.create_all()  # Создание таблиц
-    #app.run(debug=True)  # Запуск приложения
-    app.run(host='0.0.0.0', port=5000, debug=True)  # Запуск приложения
-    
+    with app.app_context():
+        db.create_all()
+    app.run(host='0.0.0.0', port=5000, debug=True)

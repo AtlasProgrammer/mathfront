@@ -3,7 +3,7 @@ import json
 import sqlite3
 from decimal import getcontext
 import sympy as sp  
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import os
 
@@ -122,6 +122,7 @@ def process_task(task_data):
     point_a = task_data['point_a']
     point_b = task_data['point_b']
     ttl = task_data['ttl']
+    ttl = float(ttl)
     logging.info(f"Processing task: {task_id}")
     logging.info(f"Processing task: {task_data}")
 
@@ -161,10 +162,17 @@ def process_task(task_data):
 
             newton_result = newton_method(expression, x0)
             segment_result = bisection_method(expression, a, b)
+            end_time = datetime.now()
 
-            status = "Завершено"
-            completed_at = datetime.now()
-            logging.info(f"Задача {task_id} выполнена Ньютон: {newton_result}, Бисекция: {segment_result}")  
+            total_time = (end_time - accepted_at).total_seconds()
+
+            if total_time > ttl:
+                status = "Истек TTL"
+                insert_task_result(conn, cursor, task_id, status, accepted_at, completed_at, expression, newton_result, segment_result)
+            else:
+                status = "Завершено"
+                completed_at = datetime.now()
+                logging.info(f"Задача {task_id} выполнена Ньютон: {newton_result}, Бисекция: {segment_result}")  
         except Exception as e:
             status = f"Ошибка: {str(e)}"
             logging.error(f"Error processing task {task_id}: {str(e)}")
